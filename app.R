@@ -26,7 +26,7 @@ sewanee_temp <-
 
 # UI ----
 ui <- fluidPage(
-  titlePanel(''),
+  titlePanel("Weather Data for Sewanee, TN"),
   tabsetPanel(
     ## temp tab ----
     tabPanel(h5("Tempature"),
