@@ -10,6 +10,7 @@ setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 library(dplyr)
 library(ggplot2)
 library(readr)
+library(lubridate)
 
 rm(list = ls()) # clear environment first
 dir() # look at files in your working directory
@@ -62,4 +63,122 @@ ggplot(sewanee_temp %>% filter(year == 2000:2023),
            y = temp,
            group = year)) +
   geom_boxplot()
+
+# rain plot ----
+sewanee_rain <- 
+  sewanee_rain %>%
+  mutate(time = make_date(year = sewanee_rain$year,
+                          month = 1,
+                          day = 1))
+## by month ----
+sewanee_rain_month <- 
+  sewanee_rain %>% 
+  mutate(time = paste(month, year)) %>%
+  mutate(time = my(time))
+
+ggplot(sewanee_rain_month,
+       aes(x = time,
+           y = inches))+
+  geom_area(fill = "blue")
+
+## by season ----
+spring <- c("March","April","May")
+summer <- c("June","July","August")
+autumn <- c("September","October","November")
+winter <- c("December","January","February")
+
+sewanee_rain_season <- 
+  sewanee_rain %>%
+  mutate(season = month)
+
+for (i in spring){
+  sewanee_rain_season <-
+    sewanee_rain_season %>%
+    mutate(season = gsub(i, "spring", sewanee_rain_season$season))
+  }
+
+for (i in summer){
+  sewanee_rain_season <-
+    sewanee_rain_season %>%
+    mutate(season = gsub(i, "summer", sewanee_rain_season$season))
+}
+
+for (i in autumn){
+  sewanee_rain_season <-
+    sewanee_rain_season %>%
+    mutate(season = gsub(i, "autumn", sewanee_rain_season$season))
+}
+
+for (i in winter){
+  sewanee_rain_season <-
+    sewanee_rain_season %>%
+    mutate(season = gsub(i, "winter", sewanee_rain_season$season))
+}
+
+sewanee_rain_season <-
+  sewanee_rain_season %>%
+  group_by(year, season) %>%
+  summarise(total_inches = sum(inches, na.rm = TRUE)) %>%
+  mutate(ID = row_number()) 
+
+sewanee_rain_season$ID <- gsub("1", "09", sewanee_rain_season$ID)
+sewanee_rain_season$ID <- gsub("2", "03", sewanee_rain_season$ID)
+sewanee_rain_season$ID <- gsub("1", "06", sewanee_rain_season$ID)
+sewanee_rain_season$ID <- gsub("1", "11", sewanee_rain_season$ID)
+
+sewanee_rain_season <- 
+  sewanee_rain_season %>% 
+  mutate(time = paste(ID, year)) %>%
+  mutate(time = my(time))
+
+ggplot(sewanee_rain_season,
+       aes(x = time,
+           y = total_inches)) +
+  geom_area()
+
+## by year ----
+sewanee_rain_year <-
+  sewanee_rain %>% 
+  group_by(time) %>%
+  summarise(total_inches = sum(inches, na.rm = TRUE))
+
+ggplot(sewanee_rain_year,
+       aes(x = time,
+           y = total_inches)) +
+  geom_area(fill = 'blue')
+
+
+
+# temperature plot ----
+
+## basic ----
+sewanee_temp <- 
+  sewanee_temp %>%
+  mutate(time = paste(month, year),
+         temp = as.numeric(temp)) %>%
+  mutate(time = my(time))
+  
+ggplot(sewanee_temp,
+       aes(x = time,
+           y = temp,
+           color = stat)) +
+  geom_path()
+
+## for each month ----
+temp_month_plot <- 
+  function(m){
+    sewanee_temp_month <- 
+      sewanee_temp %>%
+      filter(month == m) 
+    
+    ggplot(sewanee_temp_month,
+           aes(x = time,
+               y = temp,
+               color = stat)) +
+      geom_path()
+  }
+
+temp_month_plot(m = "January")
+
+## for each year ----
 
